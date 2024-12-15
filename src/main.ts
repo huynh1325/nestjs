@@ -12,7 +12,7 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   const reflector = app.get(Reflector);
-  app.useGlobalGuards(new JwtAuthGuard(reflector));
+  // app.useGlobalGuards(new JwtAuthGuard(reflector));
 
   app.useGlobalPipes(new ValidationPipe());
   app.useStaticAssets(join(__dirname, '..', 'public'));
@@ -20,6 +20,12 @@ async function bootstrap() {
 
   app.setViewEngine('ejs');
 
+  // config cors
+  app.enableCors({
+    origin: 'http://localhost:4173',
+    methods: 'GET, HEAD, PUT, PATCH, POST, DELETE',
+    preflightContinue: false,
+  });
   await app.listen(configService.get<string>('PORT'));
 }
 bootstrap();
