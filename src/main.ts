@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { TransformInterceptor } from './core/transform.interceptor';
+import cookieParser from 'cookie-parser';
 require('dotenv').config();
 
 async function bootstrap() {
@@ -21,6 +22,7 @@ async function bootstrap() {
   app.setViewEngine('ejs');
 
   app.useGlobalPipes(new ValidationPipe());
+  app.use(cookieParser());
 
   app.enableCors({
     origin: 'http://localhost:4173',
@@ -28,12 +30,11 @@ async function bootstrap() {
     preflightContinue: false,
   });
 
-  app.setGlobalPrefix('api/v1');
-  // app.enableVersioning({
-  //   type: VersioningType.URI,
-  //   prefix: 'api/v',
-  //   defaultVersion: ['1', '2'],
-  // });
+  app.enableVersioning({
+    type: VersioningType.URI,
+    prefix: 'api/v',
+    defaultVersion: ['1', '2'],
+  });
 
   await app.listen(configService.get<string>('PORT'));
 }
