@@ -5,7 +5,7 @@ import { IUser } from 'src/users/users.interface';
 import { RegisterUserDto } from 'src/users/dto/create-user.dto';
 import { ConfigService } from '@nestjs/config';
 import ms from 'ms';
-import { Response } from 'express';
+import { response, Response } from 'express';
 
 @Injectable()
 export class AuthService {
@@ -98,7 +98,7 @@ export class AuthService {
     
         await this.usersService.updateUserToken(refresh_token, _id.toString());
 
-        response.clearCookie("refresh_token")
+        response.clearCookie("refresh_token");
         response.cookie('refresh_token', refresh_token, {
           httpOnly: true,
           maxAge: ms(this.configService.get<string>("JWT_REFRESH_EXPIRE"))
@@ -117,5 +117,11 @@ export class AuthService {
     } catch (error) {
       throw new BadRequestException('Refresh token không hợp lệ, vui lòng đăng nhập')
     }
+  }
+
+  logout = async (response: Response, user: IUser) => {
+    await this.usersService.updateUserToken("", user._id);
+    response.clearCookie("refresh_token");
+    return "ok";
   }
 }

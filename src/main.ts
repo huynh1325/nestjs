@@ -25,9 +25,10 @@ async function bootstrap() {
   app.use(cookieParser());
 
   app.enableCors({
-    origin: 'http://localhost:4173',
-    methods: 'GET, HEAD, PUT, PATCH, POST, DELETE',
-    preflightContinue: false,
+    "origin": true,
+    "methods": 'GET, HEAD, PUT, PATCH, POST, DELETE',
+    "preflightContinue": false,
+    credentials: true
   });
 
   app.enableVersioning({

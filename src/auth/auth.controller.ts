@@ -32,7 +32,6 @@ export class AuthController {
   handleRegister(@Body() registerUserDto: RegisterUserDto) {
     return this.authService.register(registerUserDto);
   }
-
   
   @ResponseMessage("Get user information")
   @Get('/account')
@@ -46,5 +45,11 @@ export class AuthController {
   handleRefreshToken(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
     const refreshToken = request.cookies["refresh_token"]
     return this.authService.processNewToken(refreshToken, response);
+  }
+  
+  @ResponseMessage("Logout user")
+  @Post('/logout')
+  handleLogout(@Res({ passthrough: true }) response: Response, @User() user: IUser) {
+    return this.authService.logout(response, user);
   }
 }
