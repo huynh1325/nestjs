@@ -14,6 +14,9 @@ export class Company {
   @Prop()
   description: string;
 
+  @Prop()
+  login: string;
+
   @Prop({ type: Object })
   createdBy: {
     _id: string;
