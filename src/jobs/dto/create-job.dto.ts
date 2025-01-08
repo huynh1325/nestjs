@@ -18,6 +18,9 @@ class Company {
 
     @IsNotEmpty()
     name: string;
+
+    @IsNotEmpty()
+    logo: string;
 }
 
 export class CreateJobDto {
@@ -28,6 +31,9 @@ export class CreateJobDto {
     @IsString({ each: true, message: "Skill phải là string" })
     @IsNotEmpty({ message: 'Skill không được để trống' })
     skills: string[];
+
+    @IsNotEmpty({ message: 'Location không được để trống' })
+    location: number;
 
     @IsNotEmpty({ message: 'Salary không được để trống' })
     salary: number;
