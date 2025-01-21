@@ -17,12 +17,6 @@ export class UsersService {
     @InjectModel(UserM.name) private userModel: SoftDeleteModel<UserDocument>,
   ) {}
 
-  // getHashPassword = async (password: string) => {
-  //   const salt = genSaltSync(10);
-  //   const hash = await hashSync(password, salt);
-  //   return hash;
-  // };
-
   async create(createUserDto: CreateUserDto, @User() user: IUser) {
     const { name, email, password, age, gender, address, role, company } =
       createUserDto;
