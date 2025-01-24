@@ -1,26 +1,120 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
+import { User } from 'src/decorator/customize';
+import { IUser } from 'src/users/users.interface';
+import { Role, RoleDocument } from './schemas/role.schema';
+import { InjectModel } from '@nestjs/mongoose';
+import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
+import mongoose from 'mongoose';
+import aqp from 'api-query-params';
 
 @Injectable()
 export class RolesService {
-  create(createRoleDto: CreateRoleDto) {
-    return 'This action adds a new role';
+  constructor(@InjectModel(Role.name)
+  private roleModel: SoftDeleteModel<RoleDocument>
+) {}
+
+  async create(createRoleDto: CreateRoleDto, @User() user: IUser) {
+      const { name, description, isActive, permission } = createRoleDto;
+  
+      const isExist = await this.roleModel.findOne({ name })
+      if (isExist) {
+        throw new BadRequestException(`Role với name=${name} đã tồn tại!`);
+      }
+  
+      const newRole = await this.roleModel.create({
+        name, description, isActive, permission,
+        createdBy: {
+          _id: user._id,
+          email: user.email
+        }
+      })
+      
+      return {
+        _id: newRole?._id,
+        createdAt: newRole?.createdAt
+      }
+    }
+  
+  async findAll(currentPage: number, limit: number, qs: string) {
+    const { filter, sort, population } = aqp(qs);
+    delete filter.current;
+    delete filter.pageSize;
+
+    let offset = (+currentPage - 1) * +limit;
+    let defaultLimit = +limit ? +limit : 10;
+
+    const totalItems = (await this.roleModel.find(filter)).length;
+    const totalPages = Math.ceil(totalItems / defaultLimit);
+
+    const result = await this.roleModel
+      .find(filter)
+      .skip(offset)
+      .limit(defaultLimit)
+      .sort(sort as any)
+      .populate(population)
+      .exec();
+
+    return {
+      meta: {
+        current: currentPage,
+        pageSize: limit,
+        pages: totalPages,
+        total: totalItems,
+      },
+      result
+    };
   }
 
-  findAll() {
-    return `This action returns all roles`;
-  }
+  async findOne(id: string) {
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new BadRequestException(`not found role`)
+      }
+      return (await this.roleModel.findById(id)).populate({ path: "permissions", select: {_id: 1, apiPath: 1, name: 1, method: 1, module: 1}})
+    }
 
-  findOne(id: number) {
-    return `This action returns a #${id} role`;
-  }
+  async update(id: string, updateRoleDto: UpdateRoleDto, user: IUser) {
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new BadRequestException(`not found role`)
+      }
 
-  update(id: number, updateRoleDto: UpdateRoleDto) {
-    return `This action updates a #${id} role`;
-  }
+      const { name, description, isActive, permission } = updateRoleDto;
 
-  remove(id: number) {
-    return `This action removes a #${id} role`;
-  }
+      const updated = await this.roleModel.updateOne(
+        { _id: id },
+        {
+          name, description, isActive, permission,
+          updateBy: {
+            _id: user._id,
+            email: user.email,
+          },
+        },
+      );
+      
+      return updated;
+    }
+
+  async remove(id: string, user: IUser) {
+
+    const foundRole = await this.roleModel.findById(id);
+    if (foundRole.name === "ADMIN") {
+      throw new BadRequestException("Không thể xóa role ADMIN");
+    }
+
+      await this.roleModel.updateOne(
+        {
+          _id: id,
+        },
+        {
+          deletedBy: {
+            _id: user._id,
+            email: user.email,
+          },
+        },
+      );
+      return this.roleModel.softDelete({
+        _id: id,
+      });
+    }
 }
